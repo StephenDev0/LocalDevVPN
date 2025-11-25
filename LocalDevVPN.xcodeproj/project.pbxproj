@@ -41,13 +41,20 @@
 		0E6351B62E18DF53002AF750 /* Build.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Build.xcconfig; sourceTree = "<group>"; };
 		0E6351B72E18DF53002AF750 /* CodeSigning.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = CodeSigning.xcconfig; sourceTree = "<group>"; };
 		0E6351B82E18DF53002AF750 /* CodeSigning.xcconfig.sample */ = {isa = PBXFileReference; lastKnownFileType = text; path = CodeSigning.xcconfig.sample; sourceTree = "<group>"; };
-		4EB3C7582D96631A00C1B22C /* StosVPN.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = StosVPN.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		4EB3C7582D96631A00C1B22C /* LocalDevVPN.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = LocalDevVPN.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		4EB3C76E2D96715400C1B22C /* TunnelProv.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = TunnelProv.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		4EB3C7702D96715400C1B22C /* NetworkExtension.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = NetworkExtension.framework; path = System/Library/Frameworks/NetworkExtension.framework; sourceTree = SDKROOT; };
 		4EE6B99A2E8F756700E30694 /* AppIcon.icon */ = {isa = PBXFileReference; lastKnownFileType = folder.iconcomposer.icon; path = AppIcon.icon; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		190996C92ED0FC91006411F1 /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 4EB3C7572D96631A00C1B22C /* LocalDevVPN */;
+		};
 		4EB3C77A2D96715400C1B22C /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
@@ -55,17 +62,10 @@
 			);
 			target = 4EB3C76D2D96715400C1B22C /* TunnelProv */;
 		};
-		4EB3C7802D9672DE00C1B22C /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
-			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-			membershipExceptions = (
-				Info.plist,
-			);
-			target = 4EB3C7572D96631A00C1B22C /* StosVPN */;
-		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		4EB3C75A2D96631A00C1B22C /* StosVPN */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (4EB3C7802D9672DE00C1B22C /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = StosVPN; sourceTree = "<group>"; };
+		4EB3C75A2D96631A00C1B22C /* LocalDevVPN */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (190996C92ED0FC91006411F1 /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = LocalDevVPN; sourceTree = "<group>"; };
 		4EB3C7722D96715400C1B22C /* TunnelProv */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (4EB3C77A2D96715400C1B22C /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = TunnelProv; sourceTree = "<group>"; };
 /* End PBXFileSystemSynchronizedRootGroup section */
 
@@ -96,7 +96,7 @@
 				0E6351B62E18DF53002AF750 /* Build.xcconfig */,
 				0E6351B72E18DF53002AF750 /* CodeSigning.xcconfig */,
 				0E6351B82E18DF53002AF750 /* CodeSigning.xcconfig.sample */,
-				4EB3C75A2D96631A00C1B22C /* StosVPN */,
+				4EB3C75A2D96631A00C1B22C /* LocalDevVPN */,
 				4EB3C7722D96715400C1B22C /* TunnelProv */,
 				4EB3C76F2D96715400C1B22C /* Frameworks */,
 				4EB3C7592D96631A00C1B22C /* Products */,
@@ -106,7 +106,7 @@
 		4EB3C7592D96631A00C1B22C /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				4EB3C7582D96631A00C1B22C /* StosVPN.app */,
+				4EB3C7582D96631A00C1B22C /* LocalDevVPN.app */,
 				4EB3C76E2D96715400C1B22C /* TunnelProv.appex */,
 			);
 			name = Products;
@@ -123,9 +123,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		4EB3C7572D96631A00C1B22C /* StosVPN */ = {
+		4EB3C7572D96631A00C1B22C /* LocalDevVPN */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 4EB3C7662D96631B00C1B22C /* Build configuration list for PBXNativeTarget "StosVPN" */;
+			buildConfigurationList = 4EB3C7662D96631B00C1B22C /* Build configuration list for PBXNativeTarget "LocalDevVPN" */;
 			buildPhases = (
 				4EB3C7542D96631A00C1B22C /* Sources */,
 				4EB3C7552D96631A00C1B22C /* Frameworks */,
@@ -138,14 +138,14 @@
 				4EB3C7782D96715400C1B22C /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
-				4EB3C75A2D96631A00C1B22C /* StosVPN */,
+				4EB3C75A2D96631A00C1B22C /* LocalDevVPN */,
 			);
-			name = StosVPN;
+			name = LocalDevVPN;
 			packageProductDependencies = (
 				0E6351BD2E18EABA002AF750 /* NavigationBackport */,
 			);
-			productName = StosVPN;
-			productReference = 4EB3C7582D96631A00C1B22C /* StosVPN.app */;
+			productName = LocalDevVPN;
+			productReference = 4EB3C7582D96631A00C1B22C /* LocalDevVPN.app */;
 			productType = "com.apple.product-type.application";
 		};
 		4EB3C76D2D96715400C1B22C /* TunnelProv */ = {
@@ -190,7 +190,7 @@
 					};
 				};
 			};
-			buildConfigurationList = 4EB3C7532D96631A00C1B22C /* Build configuration list for PBXProject "StosVPN" */;
+			buildConfigurationList = 4EB3C7532D96631A00C1B22C /* Build configuration list for PBXProject "LocalDevVPN" */;
 			compatibilityVersion = "Xcode 14.0";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
@@ -210,7 +210,7 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				4EB3C7572D96631A00C1B22C /* StosVPN */,
+				4EB3C7572D96631A00C1B22C /* LocalDevVPN */,
 				4EB3C76D2D96715400C1B22C /* TunnelProv */,
 			);
 		};
@@ -414,8 +414,13 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CLANG_ENABLE_MODULES = YES;
-				DEVELOPMENT_ASSET_PATHS = "\"StosVPN/Preview Content\"";
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_ASSET_PATHS = "\"LocalDevVPN/Preview Content\"";
+				DEVELOPMENT_TEAM = 42Q7QX86GV;
 				ENABLE_PREVIEWS = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = LocalDevVPN;
+				INFOPLIST_KEY_NSHumanReadableCopyright = Stossy11;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -425,9 +430,11 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.jkcoxson.LocalDevVPN;
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				SUPPORTED_PLATFORMS = "appletvos appletvsimulator iphoneos iphonesimulator";
 				SUPPORTS_MACCATALYST = NO;
-				SWIFT_OBJC_BRIDGING_HEADER = "StosVPN/StosVPN-Bridging-Header.h";
+				SWIFT_OBJC_BRIDGING_HEADER = "LocalDevVPN/LocalDevVPN-Bridging-Header.h";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2,3";
@@ -442,8 +449,13 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CLANG_ENABLE_MODULES = YES;
-				DEVELOPMENT_ASSET_PATHS = "\"StosVPN/Preview Content\"";
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_ASSET_PATHS = "\"LocalDevVPN/Preview Content\"";
+				DEVELOPMENT_TEAM = 42Q7QX86GV;
 				ENABLE_PREVIEWS = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = LocalDevVPN;
+				INFOPLIST_KEY_NSHumanReadableCopyright = Stossy11;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -453,9 +465,11 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.jkcoxson.LocalDevVPN;
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				SUPPORTED_PLATFORMS = "appletvos appletvsimulator iphoneos iphonesimulator";
 				SUPPORTS_MACCATALYST = NO;
-				SWIFT_OBJC_BRIDGING_HEADER = "StosVPN/StosVPN-Bridging-Header.h";
+				SWIFT_OBJC_BRIDGING_HEADER = "LocalDevVPN/LocalDevVPN-Bridging-Header.h";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2,3";
 				TVOS_DEPLOYMENT_TARGET = 17.0;
@@ -465,6 +479,7 @@
 		4EB3C77C2D96715400C1B22C /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				DEVELOPMENT_TEAM = 42Q7QX86GV;
 				INFOPLIST_KEY_CFBundleDisplayName = TunnelProv;
 				INFOPLIST_KEY_NSHumanReadableCopyright = Stossy11;
 				INFOPLIST_KEY_UIRequiredDeviceCapabilities = arm64;
@@ -474,10 +489,12 @@
 					"@executable_path/../../Frameworks",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = "$(TUNNEL_BUNDLE_IDENTIFIER)";
+				"PRODUCT_BUNDLE_IDENTIFIER[sdk=appletvos*]" = com.jkcoxson.LocalDevVPN.TunnelProv;
+				"PRODUCT_BUNDLE_IDENTIFIER[sdk=iphoneos*]" = com.jkcoxson.LocalDevVPN.TunnelProv;
 				SKIP_INSTALL = YES;
 				SUPPORTED_PLATFORMS = "appletvos appletvsimulator iphoneos iphonesimulator";
 				SUPPORTS_MACCATALYST = NO;
-				SWIFT_OBJC_BRIDGING_HEADER = "StosVPN/StosVPN-Bridging-Header.h";
+				SWIFT_OBJC_BRIDGING_HEADER = "LocalDevVPN/LocalDevVPN-Bridging-Header.h";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2,3";
 				TVOS_DEPLOYMENT_TARGET = 17.0;
@@ -487,6 +504,7 @@
 		4EB3C77D2D96715400C1B22C /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				DEVELOPMENT_TEAM = 42Q7QX86GV;
 				INFOPLIST_KEY_CFBundleDisplayName = TunnelProv;
 				INFOPLIST_KEY_NSHumanReadableCopyright = Stossy11;
 				INFOPLIST_KEY_UIRequiredDeviceCapabilities = arm64;
@@ -496,10 +514,12 @@
 					"@executable_path/../../Frameworks",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = "$(TUNNEL_BUNDLE_IDENTIFIER)";
+				"PRODUCT_BUNDLE_IDENTIFIER[sdk=appletvos*]" = com.jkcoxson.LocalDevVPN.TunnelProv;
+				"PRODUCT_BUNDLE_IDENTIFIER[sdk=iphoneos*]" = com.jkcoxson.LocalDevVPN.TunnelProv;
 				SKIP_INSTALL = YES;
 				SUPPORTED_PLATFORMS = "appletvos appletvsimulator iphoneos iphonesimulator";
 				SUPPORTS_MACCATALYST = NO;
-				SWIFT_OBJC_BRIDGING_HEADER = "StosVPN/StosVPN-Bridging-Header.h";
+				SWIFT_OBJC_BRIDGING_HEADER = "LocalDevVPN/LocalDevVPN-Bridging-Header.h";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2,3";
 				TVOS_DEPLOYMENT_TARGET = 17.0;
@@ -509,7 +529,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		4EB3C7532D96631A00C1B22C /* Build configuration list for PBXProject "StosVPN" */ = {
+		4EB3C7532D96631A00C1B22C /* Build configuration list for PBXProject "LocalDevVPN" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				4EB3C7642D96631B00C1B22C /* Debug */,
@@ -518,7 +538,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		4EB3C7662D96631B00C1B22C /* Build configuration list for PBXNativeTarget "StosVPN" */ = {
+		4EB3C7662D96631B00C1B22C /* Build configuration list for PBXNativeTarget "LocalDevVPN" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				4EB3C7672D96631B00C1B22C /* Debug */,

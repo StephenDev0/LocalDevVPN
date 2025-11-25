@@ -1,13 +1,36 @@
 {
   "fill" : {
-    "automatic-gradient" : "display-p3:0.23889,0.54053,0.96826,1.00000"
+    "linear-gradient" : [
+      "display-p3:0.72718,1.00000,0.56150,1.00000",
+      "display-p3:0.23889,0.54053,0.96826,1.00000"
+    ],
+    "orientation" : {
+      "start" : {
+        "x" : 0.5,
+        "y" : 0
+      },
+      "stop" : {
+        "x" : 0.5,
+        "y" : 0.7
+      }
+    }
   },
   "groups" : [
     {
       "layers" : [
         {
+          "blend-mode" : "normal",
+          "hidden" : false,
           "image-name" : "StosPlug.svg",
-          "name" : "StosPlug"
+          "name" : "StosPlug",
+          "opacity" : 0.5,
+          "position" : {
+            "scale" : 1,
+            "translation-in-points" : [
+              0,
+              0
+            ]
+          }
         }
       ],
       "shadow" : {

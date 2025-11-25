@@ -1,13 +1,13 @@
 //
 //  ContentView.swift
-//  StosVPN
+//  LocalDevVPN
 //
 //  Created by Stossy11 on 28/03/2025.
 //
 
-import SwiftUI
 import Foundation
 import NetworkExtension
+import SwiftUI
 
 import NavigationBackport
 
@@ -17,58 +17,60 @@ extension Bundle {
 }
 
 // MARK: - Logging Utility
+
 class VPNLogger: ObservableObject {
     @Published var logs: [String] = []
-    
+
     static var shared = VPNLogger()
-    
+
     private init() {}
-    
+
     func log(_ message: Any, file: String = #file, function: String = #function, line: Int = #line) {
         #if DEBUG
-        let fileName = (file as NSString).lastPathComponent
-        print("[\(fileName):\(line)] \(function): \(message)")
+            let fileName = (file as NSString).lastPathComponent
+            print("[\(fileName):\(line)] \(function): \(message)")
         #endif
-        
+
         logs.append("\(message)")
     }
 }
 
 // MARK: - Tunnel Manager
+
 class TunnelManager: ObservableObject {
     @Published var hasLocalDeviceSupport = false
     @Published var tunnelStatus: TunnelStatus = .disconnected
-    
+
     static var shared = TunnelManager()
-    
+
     @Published var waitingOnSettings: Bool = false
     @Published var vpnManager: NETunnelProviderManager?
     private var vpnObserver: NSObjectProtocol?
     private var isProcessingStatusChange = false
-    
+
     private var tunnelDeviceIp: String {
         UserDefaults.standard.string(forKey: "TunnelDeviceIP") ?? "10.7.0.0"
     }
-    
+
     private var tunnelFakeIp: String {
         UserDefaults.standard.string(forKey: "TunnelFakeIP") ?? "10.7.0.1"
     }
-    
+
     private var tunnelSubnetMask: String {
         UserDefaults.standard.string(forKey: "TunnelSubnetMask") ?? "255.255.255.0"
     }
-    
+
     private var tunnelBundleId: String {
         Bundle.main.bundleIdentifier!.appending(".TunnelProv")
     }
-    
+
     enum TunnelStatus {
         case disconnected
         case connecting
         case connected
         case disconnecting
         case error
-        
+
         var color: Color {
             switch self {
             case .disconnected: return .gray
@@ -78,7 +80,7 @@ class TunnelManager: ObservableObject {
             case .error: return .red
             }
         }
-        
+
         var systemImage: String {
             switch self {
             case .disconnected: return "network.slash"
@@ -88,7 +90,7 @@ class TunnelManager: ObservableObject {
             case .error: return "exclamationmark.shield.fill"
             }
         }
-        
+
         var localizedTitle: LocalizedStringKey {
             switch self {
             case .disconnected:
@@ -104,17 +106,18 @@ class TunnelManager: ObservableObject {
             }
         }
     }
-    
+
     private init() {
         setupStatusObserver()
         loadTunnelPreferences()
     }
-    
+
     // MARK: - Private Methods
+
     private func loadTunnelPreferences() {
-        NETunnelProviderManager.loadAllFromPreferences { [weak self] (managers, error) in
+        NETunnelProviderManager.loadAllFromPreferences { [weak self] managers, error in
             guard let self = self else { return }
-            
+
             DispatchQueue.main.async {
                 if let error = error {
                     VPNLogger.shared.log("Error loading preferences: \(error.localizedDescription)")
@@ -122,10 +125,10 @@ class TunnelManager: ObservableObject {
                     self.waitingOnSettings = true
                     return
                 }
-                
+
                 self.hasLocalDeviceSupport = true
                 self.waitingOnSettings = true
-                
+
                 if let managers = managers, !managers.isEmpty {
                     let stosManagers = managers.filter { manager in
                         guard let proto = manager.protocolConfiguration as? NETunnelProviderProtocol else {
@@ -133,18 +136,18 @@ class TunnelManager: ObservableObject {
                         }
                         return proto.providerBundleIdentifier == self.tunnelBundleId
                     }
-                    
+
                     if !stosManagers.isEmpty {
                         if stosManagers.count > 1 {
                             self.cleanupDuplicateManagers(stosManagers)
                         } else if let manager = stosManagers.first {
                             self.vpnManager = manager
                             let currentStatus = manager.connection.status
-                            VPNLogger.shared.log("Loaded existing StosVPN tunnel configuration with status: \(currentStatus.rawValue)")
+                            VPNLogger.shared.log("Loaded existing LocalDevVPN tunnel configuration with status: \(currentStatus.rawValue)")
                             self.updateTunnelStatus(from: currentStatus)
                         }
                     } else {
-                        VPNLogger.shared.log("No StosVPN tunnel configuration found")
+                        VPNLogger.shared.log("No LocalDevVPN tunnel configuration found")
                     }
                 } else {
                     VPNLogger.shared.log("No existing tunnel configurations found")
@@ -152,21 +155,21 @@ class TunnelManager: ObservableObject {
             }
         }
     }
-    
+
     private func cleanupDuplicateManagers(_ managers: [NETunnelProviderManager]) {
-        VPNLogger.shared.log("Found \(managers.count) StosVPN configurations. Cleaning up duplicates...")
-        
+        VPNLogger.shared.log("Found \(managers.count) LocalDevVPN configurations. Cleaning up duplicates...")
+
         let activeManager = managers.first {
             $0.connection.status == .connected || $0.connection.status == .connecting
         }
-        
+
         let managerToKeep = activeManager ?? managers.first!
-        
+
         DispatchQueue.main.async { [weak self] in
             self?.vpnManager = managerToKeep
             self?.updateTunnelStatus(from: managerToKeep.connection.status)
         }
-        
+
         for manager in managers where manager != managerToKeep {
             manager.removeFromPreferences { error in
                 if let error = error {
@@ -177,7 +180,7 @@ class TunnelManager: ObservableObject {
             }
         }
     }
-    
+
     private func setupStatusObserver() {
         vpnObserver = NotificationCenter.default.addObserver(
             forName: .NEVPNStatusDidChange,
@@ -186,18 +189,18 @@ class TunnelManager: ObservableObject {
         ) { [weak self] notification in
             guard let self = self else { return }
             guard let connection = notification.object as? NEVPNConnection else { return }
-            
+
             VPNLogger.shared.log("VPN Status notification received: \(connection.status.rawValue)")
-            
+
             // Update status immediately if it's our manager
             if let manager = self.vpnManager, connection == manager.connection {
                 self.updateTunnelStatus(from: connection.status)
             }
-            
+
             self.handleVPNStatusChange(notification: notification)
         }
     }
-    
+
     private func updateTunnelStatus(from connectionStatus: NEVPNStatus) {
         let newStatus: TunnelStatus
         switch connectionStatus {
@@ -214,29 +217,29 @@ class TunnelManager: ObservableObject {
         @unknown default:
             newStatus = .error
         }
-        
+
         DispatchQueue.main.async { [weak self] in
             guard let self = self else { return }
             if self.tunnelStatus != newStatus {
-                VPNLogger.shared.log("StosVPN status updated from \(self.tunnelStatus) to \(newStatus)")
+                VPNLogger.shared.log("LocalDevVPN status updated from \(self.tunnelStatus) to \(newStatus)")
             }
             self.tunnelStatus = newStatus
         }
     }
-    
-    private func createStosVPNConfiguration(completion: @escaping (NETunnelProviderManager?) -> Void) {
-        NETunnelProviderManager.loadAllFromPreferences { [weak self] (managers, error) in
+
+    private func createLocalDevVPNConfiguration(completion: @escaping (NETunnelProviderManager?) -> Void) {
+        NETunnelProviderManager.loadAllFromPreferences { [weak self] managers, error in
             guard let self = self else {
                 completion(nil)
                 return
             }
-            
+
             if let error = error {
                 VPNLogger.shared.log("Error checking existing VPN configurations: \(error.localizedDescription)")
                 completion(nil)
                 return
             }
-            
+
             if let managers = managers {
                 let stosManagers = managers.filter { manager in
                     guard let proto = manager.protocolConfiguration as? NETunnelProviderProtocol else {
@@ -244,48 +247,48 @@ class TunnelManager: ObservableObject {
                     }
                     return proto.providerBundleIdentifier == self.tunnelBundleId
                 }
-                
+
                 if let existingManager = stosManagers.first {
-                    VPNLogger.shared.log("Found existing StosVPN configuration, using it instead of creating new one")
+                    VPNLogger.shared.log("Found existing LocalDevVPN configuration, using it instead of creating new one")
                     completion(existingManager)
                     return
                 }
             }
-            
+
             let manager = NETunnelProviderManager()
-            manager.localizedDescription = "StosVPN"
-            
+            manager.localizedDescription = "LocalDevVPN"
+
             let proto = NETunnelProviderProtocol()
             proto.providerBundleIdentifier = self.tunnelBundleId
-            proto.serverAddress = "StosVPN's Local Network Tunnel"
+            proto.serverAddress = "LocalDevVPN's Local Network Tunnel"
             manager.protocolConfiguration = proto
-            
+
             let onDemandRule = NEOnDemandRuleEvaluateConnection()
             onDemandRule.interfaceTypeMatch = .any
             onDemandRule.connectionRules = [NEEvaluateConnectionRule(
                 matchDomains: ["10.7.0.0", "10.7.0.1"],
                 andAction: .connectIfNeeded
             )]
-            
+
             manager.onDemandRules = [onDemandRule]
             manager.isOnDemandEnabled = true
             manager.isEnabled = true
-            
+
             manager.saveToPreferences { error in
                 DispatchQueue.main.async {
                     if let error = error {
-                        VPNLogger.shared.log("Error creating StosVPN configuration: \(error.localizedDescription)")
+                        VPNLogger.shared.log("Error creating LocalDevVPN configuration: \(error.localizedDescription)")
                         completion(nil)
                         return
                     }
-                    
-                    VPNLogger.shared.log("StosVPN configuration created successfully")
+
+                    VPNLogger.shared.log("LocalDevVPN configuration created successfully")
                     completion(manager)
                 }
             }
         }
     }
-    
+
     private func getActiveVPNManager(completion: @escaping (NETunnelProviderManager?) -> Void) {
         NETunnelProviderManager.loadAllFromPreferences { managers, error in
             if let error = error {
@@ -293,22 +296,22 @@ class TunnelManager: ObservableObject {
                 completion(nil)
                 return
             }
-            
+
             guard let managers = managers else {
                 completion(nil)
                 return
             }
-            
+
             let activeManager = managers.first { manager in
                 manager.connection.status == .connected || manager.connection.status == .connecting
             }
-            
+
             completion(activeManager)
         }
     }
-    
+
     // MARK: - Public Methods
-    
+
     func toggleVPNConnection() {
         if tunnelStatus == .connected || tunnelStatus == .connecting {
             stopVPN()
@@ -316,12 +319,12 @@ class TunnelManager: ObservableObject {
             startVPN()
         }
     }
-    
+
     func startVPN() {
         if let manager = vpnManager {
             let currentStatus = manager.connection.status
             VPNLogger.shared.log("Current manager status: \(currentStatus.rawValue)")
-            
+
             if currentStatus == .connected {
                 VPNLogger.shared.log("VPN already connected, updating UI")
                 DispatchQueue.main.async { [weak self] in
@@ -329,7 +332,7 @@ class TunnelManager: ObservableObject {
                 }
                 return
             }
-            
+
             if currentStatus == .connecting {
                 VPNLogger.shared.log("VPN already connecting, updating UI")
                 DispatchQueue.main.async { [weak self] in
@@ -338,49 +341,50 @@ class TunnelManager: ObservableObject {
                 return
             }
         }
-        
+
         getActiveVPNManager { [weak self] activeManager in
             guard let self = self else { return }
-            
+
             if let activeManager = activeManager,
-               (activeManager.protocolConfiguration as? NETunnelProviderProtocol)?.providerBundleIdentifier != self.tunnelBundleId {
-                VPNLogger.shared.log("Disconnecting existing VPN connection before starting StosVPN")
-                
-                UserDefaults.standard.set(true, forKey: "ShouldStartStosVPNAfterDisconnect")
+               (activeManager.protocolConfiguration as? NETunnelProviderProtocol)?.providerBundleIdentifier != self.tunnelBundleId
+            {
+                VPNLogger.shared.log("Disconnecting existing VPN connection before starting LocalDevVPN")
+
+                UserDefaults.standard.set(true, forKey: "ShouldStartLocalDevVPNAfterDisconnect")
                 activeManager.connection.stopVPNTunnel()
                 return
             }
-            
-            self.initializeAndStartStosVPN()
+
+            self.initializeAndStartLocalDevVPN()
         }
     }
-    
-    private func initializeAndStartStosVPN() {
+
+    private func initializeAndStartLocalDevVPN() {
         if let manager = vpnManager {
             manager.loadFromPreferences { [weak self] error in
                 guard let self = self else { return }
-                
+
                 if let error = error {
                     VPNLogger.shared.log("Error reloading manager: \(error.localizedDescription)")
                     self.createAndStartVPN()
                     return
                 }
-                
+
                 self.startExistingVPN(manager: manager)
             }
         } else {
             createAndStartVPN()
         }
     }
-    
+
     private func createAndStartVPN() {
         NETunnelProviderManager.loadAllFromPreferences { [weak self] managers, error in
             guard let self = self else { return }
-            
+
             if let error = error {
                 VPNLogger.shared.log("Error reloading VPN configurations: \(error.localizedDescription)")
             }
-            
+
             if let managers = managers {
                 let stosManagers = managers.filter { manager in
                     guard let proto = manager.protocolConfiguration as? NETunnelProviderProtocol else {
@@ -388,24 +392,24 @@ class TunnelManager: ObservableObject {
                     }
                     return proto.providerBundleIdentifier == self.tunnelBundleId
                 }
-                
+
                 if !stosManagers.isEmpty {
                     DispatchQueue.main.async { [weak self] in
                         self?.vpnManager = stosManagers.first
                     }
-                    
+
                     if stosManagers.count > 1 {
                         self.cleanupDuplicateManagers(stosManagers)
                     }
-                    
+
                     if let manager = stosManagers.first {
                         self.startExistingVPN(manager: manager)
                     }
                     return
                 }
             }
-            
-            self.createStosVPNConfiguration { [weak self] manager in
+
+            self.createLocalDevVPNConfiguration { [weak self] manager in
                 guard let self = self, let manager = manager else { return }
                 DispatchQueue.main.async { [weak self] in
                     self?.vpnManager = manager
@@ -414,32 +418,32 @@ class TunnelManager: ObservableObject {
             }
         }
     }
-    
+
     private func startExistingVPN(manager: NETunnelProviderManager) {
         // First check the actual current status
         let currentStatus = manager.connection.status
         VPNLogger.shared.log("Current VPN status before start attempt: \(currentStatus.rawValue)")
-        
+
         if currentStatus == .connected {
-            VPNLogger.shared.log("StosVPN tunnel is already connected")
+            VPNLogger.shared.log("LocalDevVPN tunnel is already connected")
             DispatchQueue.main.async { [weak self] in
                 self?.tunnelStatus = .connected
             }
             return
         }
-        
+
         if currentStatus == .connecting {
-            VPNLogger.shared.log("StosVPN tunnel is already connecting")
+            VPNLogger.shared.log("LocalDevVPN tunnel is already connecting")
             DispatchQueue.main.async { [weak self] in
                 self?.tunnelStatus = .connecting
             }
             return
         }
-        
+
         manager.isEnabled = true
         manager.saveToPreferences { [weak self] error in
             guard let self = self else { return }
-            
+
             if let error = error {
                 VPNLogger.shared.log("Error saving preferences: \(error.localizedDescription)")
                 DispatchQueue.main.async { [weak self] in
@@ -447,10 +451,10 @@ class TunnelManager: ObservableObject {
                 }
                 return
             }
-            
+
             manager.loadFromPreferences { [weak self] error in
                 guard let self = self else { return }
-                
+
                 if let error = error {
                     VPNLogger.shared.log("Error reloading preferences: \(error.localizedDescription)")
                     DispatchQueue.main.async { [weak self] in
@@ -458,11 +462,11 @@ class TunnelManager: ObservableObject {
                     }
                     return
                 }
-                
+
                 // Check status again after reload
                 let statusAfterReload = manager.connection.status
                 VPNLogger.shared.log("VPN status after reload: \(statusAfterReload.rawValue)")
-                
+
                 if statusAfterReload == .connected {
                     VPNLogger.shared.log("VPN is already connected after reload")
                     DispatchQueue.main.async { [weak self] in
@@ -470,126 +474,128 @@ class TunnelManager: ObservableObject {
                     }
                     return
                 }
-                
+
                 DispatchQueue.main.async { [weak self] in
                     self?.tunnelStatus = .connecting
                 }
-                
+
                 let options: [String: NSObject] = [
                     "TunnelDeviceIP": self.tunnelDeviceIp as NSObject,
                     "TunnelFakeIP": self.tunnelFakeIp as NSObject,
-                    "TunnelSubnetMask": self.tunnelSubnetMask as NSObject
+                    "TunnelSubnetMask": self.tunnelSubnetMask as NSObject,
                 ]
-                
+
                 do {
                     try manager.connection.startVPNTunnel(options: options)
-                    VPNLogger.shared.log("StosVPN tunnel start initiated")
+                    VPNLogger.shared.log("LocalDevVPN tunnel start initiated")
                 } catch {
                     DispatchQueue.main.async { [weak self] in
                         self?.tunnelStatus = .error
                     }
-                    VPNLogger.shared.log("Failed to start StosVPN tunnel: \(error.localizedDescription)")
+                    VPNLogger.shared.log("Failed to start LocalDevVPN tunnel: \(error.localizedDescription)")
                 }
             }
         }
     }
-    
+
     func stopVPN() {
         guard let manager = vpnManager else {
             VPNLogger.shared.log("No VPN manager available to stop")
             return
         }
-        
+
         DispatchQueue.main.async { [weak self] in
             self?.tunnelStatus = .disconnecting
         }
-        
+
         manager.connection.stopVPNTunnel()
-        VPNLogger.shared.log("StosVPN tunnel stop initiated")
-        
-        UserDefaults.standard.removeObject(forKey: "ShouldStartStosVPNAfterDisconnect")
+        VPNLogger.shared.log("LocalDevVPN tunnel stop initiated")
+
+        UserDefaults.standard.removeObject(forKey: "ShouldStartLocalDevVPNAfterDisconnect")
     }
-    
+
     func handleVPNStatusChange(notification: Notification) {
         guard let connection = notification.object as? NEVPNConnection else { return }
-        
+
         VPNLogger.shared.log("Handling VPN status change: \(connection.status.rawValue)")
-        
+
         // Always update status if it's our manager's connection
         if let manager = vpnManager, connection == manager.connection {
-            VPNLogger.shared.log("Status change is for our StosVPN manager")
+            VPNLogger.shared.log("Status change is for our LocalDevVPN manager")
             updateTunnelStatus(from: connection.status)
         }
-        
+
         if connection.status == .disconnected &&
-           UserDefaults.standard.bool(forKey: "ShouldStartStosVPNAfterDisconnect") {
-            UserDefaults.standard.removeObject(forKey: "ShouldStartStosVPNAfterDisconnect")
-            
+            UserDefaults.standard.bool(forKey: "ShouldStartLocalDevVPNAfterDisconnect")
+        {
+            UserDefaults.standard.removeObject(forKey: "ShouldStartLocalDevVPNAfterDisconnect")
+
             DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [weak self] in
-                self?.initializeAndStartStosVPN()
+                self?.initializeAndStartLocalDevVPN()
             }
             return
         }
-        
+
         // Prevent recursive calls when checking for duplicates
         guard !isProcessingStatusChange else { return }
         isProcessingStatusChange = true
-        
+
         // Check for duplicates asynchronously without blocking
         DispatchQueue.global(qos: .utility).async { [weak self] in
             guard let self = self else { return }
-            
-            NETunnelProviderManager.loadAllFromPreferences { [weak self] managers, error in
+
+            NETunnelProviderManager.loadAllFromPreferences { [weak self] managers, _ in
                 guard let self = self, let managers = managers, !managers.isEmpty else {
                     DispatchQueue.main.async { [weak self] in
                         self?.isProcessingStatusChange = false
                     }
                     return
                 }
-                
+
                 let stosManagers = managers.filter { manager in
                     guard let proto = manager.protocolConfiguration as? NETunnelProviderProtocol else {
                         return false
                     }
                     return proto.providerBundleIdentifier == self.tunnelBundleId
                 }
-                
+
                 if stosManagers.count > 1 {
                     DispatchQueue.main.async { [weak self] in
                         self?.cleanupDuplicateManagers(stosManagers)
                     }
                 }
-                
+
                 DispatchQueue.main.async { [weak self] in
                     self?.isProcessingStatusChange = false
                 }
             }
         }
     }
-    
+
     // MARK: - Cleanup Utilities
-    
+
     func cleanupAllVPNConfigurations() {
         NETunnelProviderManager.loadAllFromPreferences { [weak self] managers, error in
             guard let self = self else { return }
-            
+
             if let error = error {
                 VPNLogger.shared.log("Error loading VPN configurations for cleanup: \(error.localizedDescription)")
                 return
             }
-            
+
             guard let managers = managers else { return }
-            
+
             for manager in managers {
                 guard let proto = manager.protocolConfiguration as? NETunnelProviderProtocol,
-                      proto.providerBundleIdentifier == self.tunnelBundleId else {
+                      proto.providerBundleIdentifier == self.tunnelBundleId
+                else {
                     continue
                 }
-                
+
                 if manager.connection.status == .connected || manager.connection.status == .connecting {
                     manager.connection.stopVPNTunnel()
                 }
-                
+
                 manager.removeFromPreferences { error in
                     if let error = error {
                         VPNLogger.shared.log("Error removing VPN configuration: \(error.localizedDescription)")
@@ -598,14 +604,14 @@ class TunnelManager: ObservableObject {
                     }
                 }
             }
-            
+
             DispatchQueue.main.async { [weak self] in
                 self?.vpnManager = nil
                 self?.tunnelStatus = .disconnected
             }
         }
     }
-    
+
     deinit {
         if let observer = vpnObserver {
             NotificationCenter.default.removeObserver(observer)
@@ -621,28 +627,28 @@ struct ContentView: View {
     @State var tunnel = false
     @AppStorage("autoConnect") private var autoConnect = false
     @AppStorage("hasNotCompletedSetup") private var hasNotCompletedSetup = true
-    
+
     var body: some View {
         NBNavigationStack {
             VStack(spacing: 30) {
                 Spacer()
-                
+
                 StatusIndicatorView()
-                
+
                 ConnectionButton(
                     action: {
                         tunnelManager.tunnelStatus == .connected ? tunnelManager.stopVPN() : tunnelManager.startVPN()
                     }
                 )
-                
+
                 Spacer()
-                
+
                 if tunnelManager.tunnelStatus == .connected {
                     ConnectionStatsView()
                 }
             }
             .padding()
-            .navigationTitle("StosVPN")
+            .navigationTitle("LocalDevVPN")
             .tvOSNavigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
@@ -673,38 +679,37 @@ extension View {
     @ViewBuilder
     func tvOSNavigationBarTitleDisplayMode(_ displayMode: NavigationBarItem.TitleDisplayMode) -> some View {
         #if os(iOS)
-        self.navigationBarTitleDisplayMode(displayMode)
+            navigationBarTitleDisplayMode(displayMode)
         #else
-        self
+            self
         #endif
     }
 }
-
 
 struct StatusIndicatorView: View {
     @StateObject private var tunnelManager = TunnelManager.shared
     @State private var animationAmount = 1.0
     @State private var isAnimating = false
-    
+
     var body: some View {
         VStack(spacing: 20) {
             ZStack {
                 Circle()
                     .stroke(tunnelManager.tunnelStatus.color.opacity(0.2), lineWidth: 20)
                     .frame(width: 200, height: 200)
-                
+
                 Circle()
                     .stroke(tunnelManager.tunnelStatus.color, lineWidth: 10)
                     .frame(width: 200, height: 200)
                     .scaleEffect(animationAmount)
                     .opacity(2 - animationAmount)
                     .animation(isAnimating ? Animation.easeOut(duration: 1.5).repeatForever(autoreverses: false) : .default, value: animationAmount)
-                
+
                 VStack(spacing: 10) {
                     Image(systemName: tunnelManager.tunnelStatus.systemImage)
                         .font(.system(size: 50))
                         .foregroundColor(tunnelManager.tunnelStatus.color)
-                    
+
                     Text(tunnelManager.tunnelStatus.localizedTitle)
                         .font(.headline)
                         .foregroundColor(.primary)
@@ -716,14 +721,14 @@ struct StatusIndicatorView: View {
             .onChange(of: tunnelManager.tunnelStatus) { _ in
                 updateAnimation()
             }
-            Text(tunnelManager.tunnelStatus == .connected ? 
-                NSLocalizedString("local_tunnel_active", comment: "") : 
+            Text(tunnelManager.tunnelStatus == .connected ?
+                NSLocalizedString("local_tunnel_active", comment: "") :
                 NSLocalizedString("local_tunnel_inactive", comment: ""))
                 .font(.subheadline)
                 .foregroundColor(tunnelManager.tunnelStatus == .connected ? .green : .secondary)
         }
     }
-    
+
     private func updateAnimation() {
         switch tunnelManager.tunnelStatus {
         case .disconnecting:
@@ -746,18 +751,17 @@ struct StatusIndicatorView: View {
     }
 }
 
-
 struct ConnectionButton: View {
     @StateObject private var tunnelManager = TunnelManager.shared
     let action: () -> Void
-    
+
     var body: some View {
         Button(action: action) {
             HStack {
                 Text(buttonText)
                     .font(.headline)
                     .fontWeight(.semibold)
-                
+
                 if tunnelManager.tunnelStatus == .connecting || tunnelManager.tunnelStatus == .disconnecting {
                     ProgressView()
                         .progressViewStyle(CircularProgressViewStyle())
@@ -772,7 +776,7 @@ struct ConnectionButton: View {
         }
         .disabled(tunnelManager.tunnelStatus == .connecting || tunnelManager.tunnelStatus == .disconnecting)
     }
-    
+
     private var buttonText: String {
         switch tunnelManager.tunnelStatus {
         case .connected:
@@ -785,7 +789,7 @@ struct ConnectionButton: View {
             return NSLocalizedString("connect", comment: "")
         }
     }
-    
+
     private var buttonBackground: some View {
         Group {
             if tunnelManager.tunnelStatus == .connected {
@@ -808,7 +812,7 @@ struct ConnectionButton: View {
 struct ConnectionStatsView: View {
     @State private var time = 0
     let timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
-    
+
     var body: some View {
         VStack(spacing: 25) {
             Text("local_tunnel_details")
@@ -849,12 +853,12 @@ struct ConnectionStatsView: View {
             time += 1
         }
     }
-    
+
     var formattedTime: String {
         let minutes = (time / 60) % 60
         let hours = time / 3600
         let seconds = time % 60
-        
+
         if hours > 0 {
             return String(format: "%02d:%02d:%02d", hours, minutes, seconds)
         } else {
@@ -867,18 +871,18 @@ struct StatItemView: View {
     let title: LocalizedStringKey
     let value: String
     let icon: String
-    
+
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
                 Image(systemName: icon)
                     .foregroundColor(.blue)
-                
+
                 Text(title)
                     .font(.caption)
                     .foregroundColor(.secondary)
             }
-            
+
             Text(value)
                 .font(.system(size: 16, weight: .semibold))
                 .foregroundColor(.primary)
@@ -888,6 +892,7 @@ struct StatItemView: View {
 }
 
 // MARK: - Updated SettingsView
+
 struct SettingsView: View {
     @Environment(\.presentationMode) var presentationMode
     @AppStorage("selectedLanguage") private var selectedLanguage = Locale.current.languageCode ?? "en"
@@ -901,7 +906,7 @@ struct SettingsView: View {
 
     @State private var showNetworkWarning = false
     @State private var showRestartPopUp = false
-    
+
     var body: some View {
         NBNavigationStack {
             List {
@@ -952,15 +957,15 @@ struct SettingsView: View {
                         LanguageManager.shared.updateLanguage(to: languageCode)
                         showRestartPopUp = true
                     }
-                    .alert(isPresented: $showRestartPopUp){
-                            Alert(
-                                title: Text("restart_title"),
-                                message: Text("restart_message"),
-                                dismissButton: .cancel(Text("understand_button")) {
-                                    showRestartPopUp = true
-                                }
-                            )
-                    }   
+                    .alert(isPresented: $showRestartPopUp) {
+                        Alert(
+                            title: Text("restart_title"),
+                            message: Text("restart_message"),
+                            dismissButton: .cancel(Text("understand_button")) {
+                                showRestartPopUp = true
+                            }
+                        )
+                    }
                 }
             }
             .alert(isPresented: $showNetworkWarning) {
@@ -969,7 +974,7 @@ struct SettingsView: View {
                     message: Text("warning_message"),
                     dismissButton: .cancel(Text("understand_button")) {
                         shownTunnelAlert = true
-                        
+
                         deviceIP = "10.7.0.0"
                         fakeIP = "10.7.0.1"
                         subnetMask = "255.255.255.0"
@@ -991,7 +996,7 @@ struct SettingsView: View {
     private func dismiss() {
         presentationMode.wrappedValue.dismiss()
     }
-    
+
     private func networkConfigRow(label: LocalizedStringKey, text: Binding<String>) -> some View {
         HStack {
             Text(label)
@@ -1000,11 +1005,11 @@ struct SettingsView: View {
                 .multilineTextAlignment(.trailing)
                 .foregroundColor(.secondary)
                 .keyboardType(.numbersAndPunctuation)
-                .onChange(of: text.wrappedValue) { newValue in
+                .onChange(of: text.wrappedValue) { _ in
                     if !shownTunnelAlert {
                         showNetworkWarning = true
                     }
-                    
+
                     tunnelManager.vpnManager?.saveToPreferences { error in
                         if let error = error {
                             VPNLogger.shared.log(error.localizedDescription)
@@ -1016,6 +1021,7 @@ struct SettingsView: View {
 }
 
 // MARK: - New Data Collection Info View
+
 struct DataCollectionInfoView: View {
     var body: some View {
         ScrollView {
@@ -1024,27 +1030,27 @@ struct DataCollectionInfoView: View {
                     .font(.title)
                     .fontWeight(.bold)
                     .padding(.bottom, 10)
-                
+
                 GroupBox(label: Label("no_data_collection", systemImage: "hand.raised.slash").font(.headline)) {
                     Text("no_data_collection_description")
                         .padding(.vertical)
                 }
-                
+
                 GroupBox(label: Label("local_processing_only", systemImage: "iphone").font(.headline)) {
                     Text("local_processing_only_description")
                         .padding(.vertical)
                 }
-                
+
                 GroupBox(label: Label("no_third_party_sharing", systemImage: "person.2.slash").font(.headline)) {
                     Text("no_third_party_sharing_description")
                         .padding(.vertical)
                 }
-                
+
                 GroupBox(label: Label("why_use_network_permissions", systemImage: "network").font(.headline)) {
                     Text("why_use_network_permissions_description")
                         .padding(.vertical)
                 }
-                
+
                 GroupBox(label: Label("our_promise", systemImage: "checkmark.seal").font(.headline)) {
                     Text("our_promise_description")
                         .padding(.vertical)
@@ -1188,13 +1194,13 @@ struct SetupView: View {
             description: "setup_privacy_description",
             imageName: "lock.shield.fill",
             details: "setup_privacy_details"
-        )
+        ),
     ]
     var body: some View {
         NBNavigationStack {
             VStack {
                 TabView(selection: $currentPage) {
-                    ForEach(0..<pages.count, id: \.self) { index in
+                    ForEach(0 ..< pages.count, id: \.self) { index in
                         SetupPageView(page: pages[index])
                             .tag(index)
                     }
@@ -1233,7 +1239,6 @@ struct SetupView: View {
                     }
                     .padding(.bottom)
                 }
-
             }
             .navigationTitle(Text("setup_nav"))
             .tvOSNavigationBarTitleDisplayMode(.inline)
@@ -1247,7 +1252,7 @@ struct SetupView: View {
 
     private func dismiss() {
         presentationMode.wrappedValue.dismiss()
-      }
+    }
 }
 
 struct SetupPage {
@@ -1259,99 +1264,99 @@ struct SetupPage {
 
 struct SetupPageView: View {
     let page: SetupPage
-    
+
     var body: some View {
         VStack(spacing: tvOSSpacing) {
             Image(systemName: page.imageName)
                 .font(.system(size: tvOSImageSize))
                 .foregroundColor(.blue)
                 .padding(.top, tvOSTopPadding)
-            
+
             Text(page.title)
                 .font(tvOSTitleFont)
                 .fontWeight(.bold)
                 .multilineTextAlignment(.center)
-            
+
             Text(page.description)
                 .font(tvOSDescriptionFont)
                 .foregroundColor(.secondary)
                 .multilineTextAlignment(.center)
-            
+
             ScrollView {
                 Text(page.details)
                     .font(tvOSBodyFont)
                     .multilineTextAlignment(.leading)
                     .padding(.horizontal)
             }
-            
+
             Spacer()
         }
         .padding()
     }
-    
+
     // MARK: - Conditional sizes for tvOS
+
     private var tvOSImageSize: CGFloat {
         #if os(tvOS)
-        return 60
+            return 60
         #else
-        return 80
+            return 80
         #endif
     }
-    
+
     private var tvOSTopPadding: CGFloat {
         #if os(tvOS)
-        return 30
+            return 30
         #else
-        return 50
+            return 50
         #endif
     }
-    
+
     private var tvOSSpacing: CGFloat {
         #if os(tvOS)
-        return 20
+            return 20
         #else
-        return 30
+            return 30
         #endif
     }
-    
+
     private var tvOSTitleFont: Font {
         #if os(tvOS)
-        return .headline //.system(size: 35).bold()
+            return .headline // .system(size: 35).bold()
         #else
-        return .title
+            return .title
         #endif
     }
-    
+
     private var tvOSDescriptionFont: Font {
         #if os(tvOS)
-        return .subheadline
+            return .subheadline
         #else
-        return .headline
+            return .headline
         #endif
     }
-    
+
     private var tvOSBodyFont: Font {
         #if os(tvOS)
-        return .system(size: 18).bold()
+            return .system(size: 18).bold()
         #else
-        return .body
+            return .body
         #endif
     }
 }
-
 
 class LanguageManager: ObservableObject {
     static let shared = LanguageManager()
     @Published var currentLanguage: String = Locale.current.languageCode ?? "en"
     private let supportedLanguages = ["en", "es", "it", "pl"]
-    
+
     func updateLanguage(to languageCode: String) {
         if supportedLanguages.contains(languageCode) {
             currentLanguage = languageCode
             UserDefaults.standard.set([languageCode], forKey: "AppleLanguages")
             UserDefaults.standard.synchronize()
         } else {
-            currentLanguage = "en" //FALLBACK TO DEFAULT LANGUAGE
+            currentLanguage = "en" // FALLBACK TO DEFAULT LANGUAGE
             UserDefaults.standard.set(["en"], forKey: "AppleLanguages")
             UserDefaults.standard.synchronize()
         }
@@ -1359,51 +1364,51 @@ class LanguageManager: ObservableObject {
 }
 
 #if os(tvOS)
-@ViewBuilder
-func GroupBox<Content: View>(
-    label: some View,
-    @ViewBuilder content: @escaping () -> Content
-) -> some View {
-    #if os(tvOS)
-    tvOSGroupBox(label: {
-        label
-    }, content: content)
-    #else
-    SwiftUI.GroupBox(label: label, content: content)
-    #endif
-}
-
-struct tvOSGroupBox<Label: View, Content: View>: View {
-    @ViewBuilder let label: () -> Label
-    @ViewBuilder let content: () -> Content
-
-    init(
-        @ViewBuilder label: @escaping () -> Label,
+    @ViewBuilder
+    func GroupBox<Content: View>(
+        label: some View,
         @ViewBuilder content: @escaping () -> Content
-    ) {
-        self.label = label
-        self.content = content
+    ) -> some View {
+        #if os(tvOS)
+            tvOSGroupBox(label: {
+                label
+            }, content: content)
+        #else
+            SwiftUI.GroupBox(label: label, content: content)
+        #endif
     }
 
-    var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            label()
-                .font(.headline)
-            
-            content()
-                .padding(.top, 4)
+    struct tvOSGroupBox<Label: View, Content: View>: View {
+        @ViewBuilder let label: () -> Label
+        @ViewBuilder let content: () -> Content
+
+        init(
+            @ViewBuilder label: @escaping () -> Label,
+            @ViewBuilder content: @escaping () -> Content
+        ) {
+            self.label = label
+            self.content = content
         }
-        .padding()
-        .background(
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(.secondary)
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .stroke(.separator, lineWidth: 0.5)
-        )
+
+        var body: some View {
+            VStack(alignment: .leading, spacing: 8) {
+                label()
+                    .font(.headline)
+
+                content()
+                    .padding(.top, 4)
+            }
+            .padding()
+            .background(
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .fill(.secondary)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .stroke(.separator, lineWidth: 0.5)
+            )
+        }
     }
-}
 #endif
 
 #Preview {
