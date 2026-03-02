@@ -54,7 +54,7 @@ class TunnelManager: ObservableObject {
     }()
 
     var serverAddress: String {
-        UserDefaults.standard.string(forKey: "VPNServerAddress") ?? ""
+        UserDefaults.standard.string(forKey: "VPNServerAddress") ?? "127.0.0.1"
     }
 
     var remoteIdentifier: String {
